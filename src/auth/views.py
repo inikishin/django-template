@@ -18,7 +18,7 @@ class LoginView(TokenObtainPairView):
     @swagger_auto_schema(
         tags=TAGS,
         responses={
-            status.HTTP_200_OK: LoginResponseSerializer,
+            status.HTTP_200_OK: LoginResponseSerializer(),
         }
     )
     def post(self, request, *args, **kwargs):
@@ -28,7 +28,7 @@ class LoginView(TokenObtainPairView):
 class RefreshView(TokenRefreshView):
     @swagger_auto_schema(
         responses={
-            status.HTTP_200_OK: RefreshResponseSerializer,
+            status.HTTP_200_OK: RefreshResponseSerializer(),
         }
     )
     def post(self, request, *args, **kwargs):
