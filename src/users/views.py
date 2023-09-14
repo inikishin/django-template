@@ -10,4 +10,4 @@ class UsersViewSet(ModelViewSet):
     pagination_class = None
     model = User
     serializer_class = UserSerializer
-    queryset = model.objects.all()
+    queryset = User.objects.all()
