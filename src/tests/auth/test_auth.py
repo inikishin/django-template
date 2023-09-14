@@ -4,11 +4,8 @@ from rest_framework import status
 
 @pytest.mark.django_db
 def test_login(loaddata, api_client):
-    url = '/auth/login/'
-    data = {
-        'username': 'admin',
-        'password': 'admin'
-    }
+    url = "/auth/login/"
+    data = {"username": "admin", "password": "admin"}
     response = api_client.post(url, data=data)
 
     assert response.status_code == status.HTTP_200_OK
@@ -20,18 +17,15 @@ def test_login(loaddata, api_client):
 
 @pytest.mark.django_db
 def test_refresh(loaddata, api_client):
-    url = '/auth/login/'
-    data = {
-        'username': 'admin',
-        'password': 'admin'
-    }
+    url = "/auth/login/"
+    data = {"username": "admin", "password": "admin"}
     response = api_client.post(url, data=data)
     assert response.status_code == status.HTTP_200_OK
-    refresh_token = response.data.get('refresh')
+    refresh_token = response.data.get("refresh")
 
-    url = '/auth/refresh/'
+    url = "/auth/refresh/"
     data = {
-        'refresh': refresh_token,
+        "refresh": refresh_token,
     }
     response = api_client.post(url, data=data)
     assert response.status_code == status.HTTP_200_OK

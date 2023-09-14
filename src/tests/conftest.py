@@ -1,6 +1,6 @@
-import pytest
 from pathlib import Path
 
+import pytest
 from django.core.management import call_command
 from rest_framework.test import APIClient
 
@@ -23,7 +23,6 @@ def api_client():
 @pytest.fixture
 @pytest.mark.django_db
 def as_admin(api_client):
-    url = 'auth/login'
-    user, password = 'admin', 'admin'
+    url = "auth/login"
+    user, password = "admin", "admin"
     response = api_client.post(url, data={"username": user, "password": password})
-
