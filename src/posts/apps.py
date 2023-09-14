@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
 
-class AuthConfig(AppConfig):
+class PostsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "auth"
+    name = "posts"
+    verbose_name = "002. Посты"
