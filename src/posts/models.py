@@ -1,13 +1,13 @@
 from django.db import models
-from django.utils.text import slugify
 from django.utils.translation import gettext as _
+from pytils.translit import slugify
 
 from config.models import IsActiveMixin, TimeStampedMixin, UUIDIdMixin
 from users.models import User
 
 
 class Tag(UUIDIdMixin, TimeStampedMixin, IsActiveMixin):
-    name = models.CharField(verbose_name=_("Название"), unique=True)
+    name = models.CharField(verbose_name=_("Название"), max_length=255, unique=True)
 
     def __str__(self):
         return self.name
@@ -28,7 +28,7 @@ class Post(UUIDIdMixin, TimeStampedMixin):
     description = models.TextField(verbose_name=_("Описание"), blank=True, null=True)
     header = models.CharField(verbose_name=_("Заголовок"), max_length=250)
     image_url = models.ImageField(verbose_name=_("Картинка"), blank=True, null=True)
-    slug = models.SlugField(verbose_name=_("slug"), unique=True, blank=True)
+    slug = models.SlugField(verbose_name=_("slug"), max_length=350, unique=True, blank=True)
     content = models.TextField(verbose_name=_("Текст"))
     author = models.ForeignKey(
         User, verbose_name=_("Автор"), related_name="posts", on_delete=models.CASCADE
