@@ -25,6 +25,7 @@ class PostViewSet(ReadOnlyModelViewSet):
     serializer_class = PostSerializer
     filterset_class = PostFilterSet
     filter_backends = [DjangoFilterBackend]
+    lookup_field = 'slug'
 
     def get_serializer_class(self):
         if self.action == "list":
