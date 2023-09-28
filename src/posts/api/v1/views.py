@@ -78,10 +78,10 @@ class PostViewSet(ReadOnlyModelViewSet):
         operation_summary="Get similar posts",
         operation_description="Get list of similar posts posts.",
     )
-    def get_similar_posts(self, request: Request, pk: UUID) -> Response:
-        post = get_object_or_404(Post, id=pk)
+    def get_similar_posts(self, request: Request, slug: str) -> Response:
+        post = get_object_or_404(Post, slug=slug)
         tags = post.tags.all()
         self.queryset = (
-            Post.objects.filter(tags__in=tags).exclude(id=pk).order_by("-modified_at")
+            Post.objects.filter(tags__in=tags).exclude(id=post.id).order_by("-modified_at")
         )
         return super().list(request)
