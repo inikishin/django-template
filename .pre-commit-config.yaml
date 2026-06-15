@@ -1,0 +1,17 @@
+# skills/ holds skill docs and code-template files (not project source) - don't lint them.
+exclude: ^skills/
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.17
+    hooks:
+      # Linter with autofix.
+      - id: ruff
+        args: [--fix]
+      # Formatter (black-like).
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.1.0
+    hooks:
+      - id: mypy

@@ -1,0 +1,15 @@
+line-length = 120
+target-version = "py312"
+
+extend-exclude = ["migrations", "skills"]
+
+[lint]
+# E/W - pycodestyle, F - pyflakes, I - isort, UP - pyupgrade.
+select = ["E", "W", "F", "I", "UP"]
+
+[lint.isort]
+# Three import blocks (stdlib / third-party / local), as in PEP8.
+known-first-party = ["app", "posts", "users", "auth"]
+
+[format]
+quote-style = "double"

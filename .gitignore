@@ -1,2 +1,19 @@
-/src/.env
 /.idea
+/.venv
+__pycache__/
+*.py[cod]
+# Claude Code local settings at any level (root or src/.claude while working from src).
+.claude/
+/CLAUDE.md
+
+# окружение
+/.env
+
+# сборка / статика / медиа
+/src/staticfiles/
+/src/media/
+*.sqlite3
+
+# тесты
+.pytest_cache/
+.ruff_cache/
