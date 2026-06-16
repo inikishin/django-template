@@ -1,4 +1,4 @@
-.PHONY: install run lint test dumpdata loaddata check
+.PHONY: install run lint test cov dumpdata loaddata check
 
 # Port the dev server listens on. Override: `make run PORT=9000` or export PORT.
 PORT ?= 8000
@@ -14,6 +14,10 @@ lint:
 
 test:
 	pytest --disable-warnings
+
+# Tests with coverage (fails under 70%; HTML report in htmlcov/).
+cov:
+	pytest --cov --cov-report=term-missing --cov-report=html --disable-warnings
 
 # Export a table to json: make dumpdata app=posts model=Post
 dumpdata:
