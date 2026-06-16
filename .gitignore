@@ -9,9 +9,9 @@ __pycache__/
 # окружение
 /.env
 
-# сборка / статика / медиа
-/src/staticfiles/
-/src/media/
+# сборка / статика / медиа / БД (генерируются в корне, не в src)
+/staticfiles/
+/media/
 *.sqlite3
 
 # тесты

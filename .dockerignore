@@ -1,9 +1,12 @@
 .venv
 .git
 .idea
-__pycache__
-*.pyc
+**/__pycache__
+**/*.pyc
 .pytest_cache
 .ruff_cache
-src/staticfiles
-src/media
+**/*.sqlite3
+.env
+staticfiles
+media
+fixtures
