@@ -1,42 +1,64 @@
-# Django template
+# Django microservice template
 
-## Версия: 0.0.1
+## Версия: 0.1.0
 
-Данный шаблон позволяет создавать проекты на Django с преднастроенными компонентами и инструментами.
+Переиспользуемый шаблон API-бекенда микросервиса на Django + Django REST Framework.
+Из него создаются новые сервисы с готовым ядром, конвенциями и инструментами.
 
-## Возможности
+## Стек и возможности
 
-* добавлено базовое приложение config
-* подключен Django Rest Framework
-* подключена документация на swagger (доступна по адресу "/swagger/")
-* подключена jwt авторизация
-* Dockerfile для приложения (с отдачей статики)
-* добавленный corsheaders
-* добавлены тесты
-* подключены и настроены линтеры
-* добавлен Makefile с командами
-* добавлен readme с описанием
-* шаблон включает в себя реализацию приложения для постов со следующим функционалом:
-  * есть все необходимое api для работы с постами
-  * Можно привязывать статьи к тегам
-  * Есть возможность получать список похожих статей
+* Django 6.0 + Django REST Framework
+* Документация OpenAPI на **drf-spectacular** (Swagger UI: `/api/swagger/`, схема: `/api/schema/`)
+* Аутентификация — **опционально** (по умолчанию без авторизации; варианты jwt/oauth — см. скил `initial-setup`)
+* Опциональные фичи (подключаются при настройке по запросу): кэш на Redis, фоновые
+  задачи Celery — шаблоны в скиле `initial-setup`
+* СУБД — **SQLite** по умолчанию (PostgreSQL — опциональный вариант)
+* Раздельные настройки (django-split-settings) в пакете `app/config/`
+* Ядро `app/`: базовые модели, вьюсеты, сериализаторы, фильтры, роутер, тестовый клиент
+* Тесты — pytest + django_dynamic_fixture
+* Линтер/форматтер — ruff (pre-commit)
+* Docker + docker-compose (сервис django; sqlite по умолчанию)
+* Пример-приложение `posts` (демонстрирует паттерны; удаляется при старте проекта)
+* `users` — кастомная модель пользователя (`AUTH_USER_MODEL`), ядро проекта (не удаляем)
+* Скилы для генерации кода моделями в `skills/` (активируются переносом в `.claude/`)
+
+## Структура
+
+Весь код — в `src/`. Ядро и настройки — пакет `app/`. Подробно — в
+`skills/project-structure/`.
+
+## Установка и запуск
+
+```shell
+python3.12 -m venv .venv
+.venv/bin/pip install -r dev-requirements.txt
+cp .env.example .env                # отредактировать значения
+cd src && python manage.py migrate
+cd src && python manage.py createsuperuser   # опционально
+make run                            # http://localhost:8000
+```
+
+Через Docker:
+
+```shell
+docker compose up -d
+```
+
+Подробная настройка и решение проблем — в скиле `skills/initial-setup/`.
 
 ## Команды Makefile
 
-```shell
-run
-```
-Запуск локального сервера
+| Команда | Назначение |
+| --- | --- |
+| `make run` | локальный сервер |
+| `make test` | тесты |
+| `make lint` | линтер/форматтер (ruff) |
+| `make dumpdata app=<app> model=<Model>` | экспорт таблицы в json |
+| `make loaddata file=<f.json>` | импорт фикстур из файла/файлов |
 
-```shell
-lint
-```
-Запуск линтеров
+## Скилы для Claude Code
 
-```shell
-test
-```
-Запуск тестов
-
-## Порядок установки
-
+В `skills/` лежат скилы, описывающие конвенции проекта для генерации кода:
+`project-structure`, `create-model`, `generate-api-method`, `backend-testing`,
+`initial-setup`. Чтобы Claude Code их подхватил, перенесите папку в `.claude/`
+(см. скил `initial-setup`). Написаны на русском (английская версия — позже).
