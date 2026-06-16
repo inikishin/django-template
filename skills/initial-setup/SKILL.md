@@ -121,17 +121,19 @@ docker compose up -d              # только сервис django (БД по 
 
 ## Переименование/адаптация шаблона под новый сервис
 
-1. Изменить заголовок API в `app/config/api.py` (`SPECTACULAR_SETTINGS["TITLE"]`).
-2. **Удалить пример-приложение `posts`** (это только демонстрация): убрать из
+1. Перенести скилы в `.claude/`, чтобы Claude Code их подхватил: `mkdir -p .claude &&
+   mv skills .claude/skills` (в шаблоне они лежат в `skills/` и до переноса не активны).
+2. Изменить заголовок API в `app/config/api.py` (`SPECTACULAR_SETTINGS["TITLE"]`).
+3. **Удалить пример-приложение `posts`** (это только демонстрация): убрать из
    `LOCAL_APPS` (`app/config/installed_apps.py`) и из `api_urlpatterns` в `app/urls.py`,
    удалить каталог `src/posts/`, а также пример данных `fixtures/tags.json` и тест
    `src/app/tests/test_loaddata.py` (он завязан на `posts`).
-3. **`users` НЕ удаляем** — это кастомная модель пользователя (`AUTH_USER_MODEL =
+4. **`users` НЕ удаляем** — это кастомная модель пользователя (`AUTH_USER_MODEL =
    "users.User"`), ядро проекта; удаление сломает auth и админку. Если список
    пользователей не нужен в API — можно убрать только `users/api/` и `users/urls.py`
    (плюс строку с `users` из `api_urlpatterns`), оставив модель.
-4. Ядро `app/` оставляем.
-5. Добавлять свои приложения по скилу `project-structure`.
+5. Ядро `app/` оставляем.
+6. Добавлять свои приложения по скилу `project-structure`.
 
 ## Устранение типичных проблем
 
