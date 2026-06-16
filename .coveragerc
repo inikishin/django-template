@@ -1,0 +1,13 @@
+[run]
+source = src
+omit =
+    */migrations/*
+    */tests/*
+    */test_*.py
+    src/manage.py
+    src/app/wsgi.py
+    src/app/asgi.py
+
+[report]
+show_missing = True
+fail_under = 70
