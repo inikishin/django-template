@@ -1,73 +1,73 @@
-# Конвенции написания кода
+# Code conventions
 
-Свод правил из эталонного проекта. Правила — опытный советник, а не строгий
-закон: любое можно нарушить, имея железную аргументацию. Соблюдаем не ради правил,
-а ради гибкого, слабо связанного кода (DRY, KISS).
+A rule set from the reference project. The rules are an experienced advisor, not a
+strict law: any of them may be broken given a rock-solid argument. We follow them not
+for the rules' sake but for the sake of flexible, loosely coupled code (DRY, KISS).
 
-## PEP8 и форматирование
+## PEP8 and formatting
 
-- Стремимся к PEP8, кроме длины строки: граница **120** символов.
-- Форматтер — ruff (`ruff format`, аналог black). Кавычки **двойные**.
-- Линт: `make lint` (pre-commit с ruff + ruff-format).
+- Aim for PEP8, except line length: the limit is **120** characters.
+- Formatter — ruff (`ruff format`, a black equivalent). Quotes are **double**.
+- Lint: `make lint` (pre-commit with ruff + ruff-format).
 
-## Импорты
+## Imports
 
-- isort, профиль black. Три блока (stdlib / сторонние / локальные).
-- Сущности извне stdlib импортируем точечно (перечисляем классы/функции).
-  Модули stdlib импортируем целиком. `import *` — нельзя. Коллизии — через `as`.
+- isort, black profile. Three blocks (stdlib / third-party / local).
+- Import entities from outside stdlib by name (list the classes/functions).
+  Import stdlib modules as whole modules. `import *` — not allowed. Resolve collisions with `as`.
 
 ```python
 import collections
 from posts.models import Post
 ```
 
-## Форматирование вызовов
+## Formatting calls
 
-- Помещается в строку — пишем в строку.
-- Не помещается — перенос после открывающей скобки.
-- Много аргументов / вложенность — расширенное форматирование, закрывающая скобка
-  на отдельной строке без лишних отступов.
+- Fits on a line — write it on one line.
+- Doesn't fit — wrap after the opening parenthesis.
+- Many arguments / nesting — expanded formatting, closing parenthesis
+  on its own line without extra indentation.
 
-## Запятые
+## Commas
 
-- В многострочных перечислениях (списки, вызовы, кортежи) — запятая после
-  последнего элемента.
-- В однострочных — без запятой в конце. Исключение: кортеж из одного элемента `(1,)`.
+- In multiline listings (lists, calls, tuples) — a trailing comma after the
+  last element.
+- In single-line ones — no trailing comma. Exception: a single-element tuple `(1,)`.
 
-## Аргументы функций
+## Function arguments
 
-Указываем имена аргументов, если они не очевидны из названия функции:
+Name the arguments when they are not obvious from the function name:
 
 ```python
 serializer.is_valid(raise_exception=True)
 ```
 
-## Комментарии и докстринги
+## Comments and docstrings
 
-- Комментарии — там, где код делает неочевидное; не дублируем код словами.
-- Однострочный докстринг заканчивается точкой, без переносов:
-  `"""Вычисление предшественников для задач."""`
-- Многострочный: первая строка — суть с точкой, пустая строка, тело. Без отступов
-  от кавычек.
-- Инлайн-комментарии — для неявных случаев и ссылок на тикеты (`# подробнее в BES-482`).
-- TODO/FIXME можно по ходу работы, но перед коммитом вычищаем (фиксим или заводим тикет).
+- Comments — where the code does something non-obvious; do not restate the code in words.
+- A single-line docstring ends with a period, with no line breaks:
+  `"""Computing predecessors for tasks."""`
+- Multiline: the first line — the gist with a period, a blank line, then the body. No indentation
+  from the quotes.
+- Inline comments — for implicit cases and references to tickets (`# more in BES-482`).
+- TODO/FIXME are fine while working, but clean them up before a commit (fix or file a ticket).
 
-## Логирование
+## Logging
 
-Все логи — на английском (логи библиотек тоже английские, нужна консистентность):
+All logs — in English (library logs are English too, we need consistency):
 
 ```python
 logger.info("Requesting balance")
 ```
 
-## Неиспользуемый код
+## Unused code
 
-Удаляем всё, что можем: закомментированный код, неактуальные фичи, разовые скрипты.
-Нет кода — нет багов.
+Remove everything we can: commented-out code, obsolete features, one-off scripts.
+No code — no bugs.
 
-## Паттерн «репозиторий» для моделей
+## The "repository" pattern for models
 
-Фильтрацию и методы выборки выносим в кастомные QuerySet и Manager:
+Move filtering and query methods into custom QuerySet and Manager classes:
 
 ```python
 from django.db import models
@@ -91,14 +91,14 @@ class Post(DefaultModel):
     objects = PostManager.from_queryset(PostQuerySet)()
 ```
 
-В вьюсете и сервисах используем `Post.objects.published()` вместо
+In viewsets and services use `Post.objects.published()` instead of
 `Post.objects.filter(is_draft=False)`.
 
-## Язык
+## Language
 
-- **Комментарии и докстринги — только на английском.** Это обязательно для всего кода
-  и связанных файлов (конфиги, Dockerfile, Makefile и т.п.).
-- Логи, имена переменных/функций/классов — английский.
-- Русский остаётся только для текста, который видит пользователь: `verbose_name`,
-  `help_text`, `summary`/`description` в схеме, сообщения валидации — через
+- **Comments and docstrings — in English only.** This is mandatory for all code
+  and related files (configs, Dockerfile, Makefile, etc.).
+- Logs, variable/function/class names — English.
+- Russian remains only for user-facing text: `verbose_name`,
+  `help_text`, `summary`/`description` in the schema, validation messages — via
   `from django.utils.translation import gettext_lazy as _`.

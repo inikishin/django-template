@@ -1,34 +1,34 @@
 ---
 name: create-model
 description: >-
-  Добавление или изменение модели Django в этом микросервисе по конвенциям проекта:
-  наследование от DefaultModel/UUIDModel и миксин, русские verbose_name, вычисляемые
-  поля через calculate_*, хук run_services, паттерн репозитория, миграции, регистрация
-  в админке. Используй при создании новой модели, добавлении полей, заведении
-  справочника или связи. Ключевые слова: модель, model, поле, миграция, makemigrations,
+  Adding or changing a Django model in this microservice per project conventions:
+  inheriting from DefaultModel/UUIDModel and mixins, Russian verbose_name, computed
+  fields via calculate_*, the run_services hook, the repository pattern, migrations,
+  admin registration. Use when creating a new model, adding fields, setting up a
+  lookup table or a relation. Keywords: модель, model, поле, миграция, makemigrations,
   ForeignKey, ManyToMany, справочник.
 metadata:
   type: project-convention
-  language: ru
+  language: en
 ---
 
-# Создание модели
+# Creating a model
 
-Перед изменениями свериться со структурой проекта (скил `project-structure`):
-модели живут в `<app>/models.py`.
+Before making changes, check against the project structure (skill `project-structure`):
+models live in `<app>/models.py`.
 
-## 1. Выбрать базовый класс
+## 1. Pick a base class
 
-Все модели наследуются от базовых классов из `app.models`:
+All models inherit from base classes in `app.models`:
 
-- `DefaultModel` — обычная модель (PK — bigint). Даёт `__str__` по полю `name`,
-  хуки `calculate_*` и `run_services()`, `update_from_kwargs`, `setattr_and_save`.
-- `UUIDModel` — то же, но первичный ключ — UUID.
+- `DefaultModel` — a regular model (PK is bigint). Provides `__str__` from the `name`
+  field, the `calculate_*` and `run_services()` hooks, `update_from_kwargs`, `setattr_and_save`.
+- `UUIDModel` — the same, but the primary key is a UUID.
 
-Добавляем миксины при необходимости:
+Add mixins as needed:
 
-- `TimeStampedMixin` — поля `created_at`, `updated_at`.
-- `IsActiveMixin` — поле `is_active` (для справочников).
+- `TimeStampedMixin` — `created_at`, `updated_at` fields.
+- `IsActiveMixin` — `is_active` field (for lookup tables).
 
 ```python
 from django.db import models
@@ -38,13 +38,13 @@ from app.models import IsActiveMixin, TimeStampedMixin, UUIDModel
 from users.models import User
 ```
 
-## 2. Описать поля по конвенциям
+## 2. Define fields per conventions
 
-- Первый позиционный аргумент `verbose_name` — на русском через `_()`.
-- Варианты значений — через `models.TextChoices`.
-- У `ForeignKey`/`ManyToManyField` указываем `verbose_name`, `related_name`,
+- The first positional argument `verbose_name` — in Russian via `_()`.
+- Choices — via `models.TextChoices`.
+- For `ForeignKey`/`ManyToManyField` specify `verbose_name`, `related_name`,
   `on_delete`.
-- Денежные суммы — `app.models.MoneyField`.
+- Money amounts — `app.models.MoneyField`.
 
 ```python
 class Tag(UUIDModel, TimeStampedMixin, IsActiveMixin):
@@ -84,11 +84,11 @@ class Post(UUIDModel, TimeStampedMixin):
         return self.title
 ```
 
-## 3. Вычисляемые поля и сервисы на save()
+## 3. Computed fields and services on save()
 
-`DefaultModel.save()` автоматически вызывает все методы `calculate_<field>`
-(заполнение вычисляемых полей в БД) и `run_services()` (побочные эффекты).
-НЕ переопределяем `save()` без необходимости — используем хуки.
+`DefaultModel.save()` automatically calls all `calculate_<field>` methods
+(filling computed fields in the DB) and `run_services()` (side effects).
+Do NOT override `save()` unless necessary — use the hooks.
 
 ```python
 def calculate_slug(self) -> None:
@@ -97,9 +97,9 @@ def calculate_slug(self) -> None:
         self.slug = slugify(self.title)
 ```
 
-## 4. Паттерн «репозиторий»
+## 4. Repository pattern
 
-Логику выборки выносим в кастомные QuerySet/Manager, а не размазываем по вьюсетам:
+Move query logic into custom QuerySet/Manager classes instead of spreading it across viewsets:
 
 ```python
 class PostQuerySet(models.QuerySet):
@@ -112,21 +112,21 @@ class Post(UUIDModel, TimeStampedMixin):
     ...
 ```
 
-## 5. Миграции
+## 5. Migrations
 
 ```bash
 cd src && python manage.py makemigrations
 cd src && python manage.py migrate
 ```
 
-## 6. Админка
+## 6. Admin
 
-Каждую модель регистрируем в `<app>/admin.py` через `@admin.register(Model)`. Дефолтный
-набор атрибутов:
+Register every model in `<app>/admin.py` via `@admin.register(Model)`. The default
+set of attributes:
 
-- `list_display` — `id` + ключевые поля + временные метки (`created_at`/`updated_at`).
-- `list_filter` — булевы поля, choices, FK, даты (`is_active`, статус, `updated_at` ...).
-- `search_fields` — текстовые поля (`name`/`title`/`description`; по связям — `author__username`).
+- `list_display` — `id` + key fields + timestamps (`created_at`/`updated_at`).
+- `list_filter` — boolean fields, choices, FKs, dates (`is_active`, status, `updated_at` ...).
+- `search_fields` — text fields (`name`/`title`/`description`; across relations — `author__username`).
 
 ```python
 from django.contrib import admin
@@ -148,22 +148,22 @@ class PostAdmin(admin.ModelAdmin):
     search_fields = ["title", "description"]
 ```
 
-Дополнительно, по необходимости:
+Additionally, as needed:
 
-- `list_select_related = ["author"]` — против N+1 для FK, попавших в `list_display`.
-- `autocomplete_fields = ["author", "tags"]` — для FK/M2M (требует `search_fields` в
-  админке связанной модели).
-- `readonly_fields = ["created_at", "updated_at"]` — чтобы показать авто-поля на странице.
-- `date_hierarchy = "created_at"`, `ordering` — навигация/сортировка.
-- Для rich-text-полей подключается форма с TinyMCE — см. фичу rich text в `initial-setup`.
+- `list_select_related = ["author"]` — against N+1 for FKs that appear in `list_display`.
+- `autocomplete_fields = ["author", "tags"]` — for FK/M2M (requires `search_fields` in
+  the related model's admin).
+- `readonly_fields = ["created_at", "updated_at"]` — to show auto-fields on the page.
+- `date_hierarchy = "created_at"`, `ordering` — navigation/sorting.
+- For rich-text fields a TinyMCE form is wired in — see the rich text feature in `initial-setup`.
 
-## Чек-лист
+## Checklist
 
-- [ ] Наследование от `DefaultModel`/`UUIDModel` (+ миксины).
-- [ ] `verbose_name` на русском, `Meta.verbose_name(_plural)`.
-- [ ] `__str__` (если нет поля `name`).
+- [ ] Inheritance from `DefaultModel`/`UUIDModel` (+ mixins).
+- [ ] `verbose_name` in Russian, `Meta.verbose_name(_plural)`.
+- [ ] `__str__` (if there is no `name` field).
 - [ ] FK/M2M: `related_name`, `on_delete`, `verbose_name`.
-- [ ] Вычисляемые поля — через `calculate_*`, не через `save()`.
-- [ ] Созданы и применены миграции.
-- [ ] Модель в админке.
-- [ ] Есть тесты (скил `backend-testing`).
+- [ ] Computed fields — via `calculate_*`, not via `save()`.
+- [ ] Migrations created and applied.
+- [ ] Model in the admin.
+- [ ] Tests exist (skill `backend-testing`).

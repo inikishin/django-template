@@ -1,185 +1,185 @@
 ---
 name: initial-setup
 description: >-
-  Первоначальная настройка нового микросервиса из этого шаблона (Django + DRF +
-  PostgreSQL) и решение проблем запуска. Здесь же — выбор и подключение
-  КОНФИГУРИРУЕМЫХ фич: база данных (sqlite/postgres), авторизация
-  (нет/jwt/oauth/keycloak), throttling, i18n, хранение статики и медиа (сервер/s3), rich text
-  (tinymce), кэш (Redis), фоновые задачи (Celery). При настройке спрашиваем
-  пользователя и добавляем нужный вариант; сюда же обращаемся, чтобы переключить
-  подход позже. Используй при создании проекта, переименовании, локальном запуске,
-  смене БД/авторизации/хранилища, а также при ошибках запуска/импорта/подключения к БД.
-  Ключевые слова: установка, настройка, запуск, venv, .env, миграции, база данных,
-  sqlite, postgres, авторизация, jwt, oauth, keycloak, throttling, i18n, s3, статика,
-  tinymce, кэш, Celery, setup, troubleshooting.
+  Initial setup of a new microservice from this template (Django + DRF +
+  PostgreSQL) and solving startup problems. Also covers choosing and wiring in
+  CONFIGURABLE features: database (sqlite/postgres), authentication
+  (none/jwt/oauth/keycloak), throttling, i18n, static and media storage (server/s3), rich text
+  (tinymce), cache (Redis), background tasks (Celery). During setup we ask the
+  user and add the chosen variant; come back here to switch the approach later.
+  Use when creating a project, renaming, running locally, switching
+  DB/authentication/storage, and on startup/import/DB-connection errors.
+  Keywords: install, setup, run, venv, .env, migrations, database,
+  sqlite, postgres, authentication, jwt, oauth, keycloak, throttling, i18n, s3, static,
+  tinymce, cache, Celery, setup, troubleshooting.
 metadata:
   type: project-setup
-  language: ru
+  language: en
 ---
 
-# Первоначальная настройка и устранение проблем
+# Initial setup and troubleshooting
 
-Микросервис на Django + DRF, PostgreSQL. Код — в `src/`, ядро/настройки — пакет
-`app/` (см. скил `project-structure`). Многие возможности (БД, авторизация, throttling,
-i18n, хранилище статики/медиа, rich text, кэш, Celery) **конфигурируются** — по
-умолчанию включён минимальный набор (см. раздел «Опциональные фичи»).
+A Django + DRF microservice, PostgreSQL. Code lives in `src/`, the core/settings are the
+`app/` package (see the `project-structure` skill). Many capabilities (DB, authentication, throttling,
+i18n, static/media storage, rich text, cache, Celery) are **configurable** — by
+default a minimal set is enabled (see the "Optional features" section).
 
-## Требования
+## Requirements
 
 - Python **3.12**.
-- БД: по умолчанию **sqlite** (ставить ничего не нужно). PostgreSQL — если выбран вариант postgres.
-- Redis — только если подключаешь кэш и/или Celery.
+- DB: by default **sqlite** (nothing to install). PostgreSQL — if the postgres variant is chosen.
+- Redis — only if you enable the cache and/or Celery.
 
-## Локальный запуск с нуля
+## Running locally from scratch
 
 ```bash
-# 0. Активировать скилы для Claude Code (однократно): перенести skills/ в .claude/.
-#    В шаблоне скилы лежат в skills/ и не активны, пока не окажутся в .claude/skills/.
+# 0. Activate skills for Claude Code (one time): move skills/ into .claude/.
+#    In the template the skills live in skills/ and are inactive until they land in .claude/skills/.
 mkdir -p .claude && mv skills .claude/skills
 
-# 1. Виртуальное окружение (именно python3.12)
+# 1. Virtual environment (specifically python3.12)
 python3.12 -m venv .venv
 
-# 2. Зависимости (runtime + dev/тесты)
+# 2. Dependencies (runtime + dev/tests)
 .venv/bin/pip install -r dev-requirements.txt
 
-# 3. Переменные окружения
-cp .env.example .env      # затем отредактировать значения
+# 3. Environment variables
+cp .env.example .env      # then edit the values
 
-# 4. База данных: по умолчанию sqlite — создавать отдельно не нужно
-#    (файл db.sqlite3 появится при migrate). Для postgres см. «Опциональные фичи».
+# 4. Database: sqlite by default — no need to create it separately
+#    (the db.sqlite3 file appears on migrate). For postgres see "Optional features".
 
-# 5. Миграции
+# 5. Migrations
 cd src && python manage.py migrate
 
-# 6. Суперпользователь для админки (опционально)
+# 6. Superuser for the admin (optional)
 cd src && python manage.py createsuperuser
 
-# 7. Запуск
+# 7. Run
 make run                          # http://localhost:8000
 ```
 
-Проверка работоспособности (пути зависят от `API_PREFIX`, по умолчанию `api`):
+Health check (paths depend on `API_PREFIX`, default `api`):
 
 - Swagger UI: `http://localhost:8000/api/swagger/`
-- OpenAPI-схема: `http://localhost:8000/api/schema/`
-- Админка: `http://localhost:8000/admin/`
-- Тесты: `make test`
+- OpenAPI schema: `http://localhost:8000/api/schema/`
+- Admin: `http://localhost:8000/admin/`
+- Tests: `make test`
 
-## Опциональные фичи (конфигурируются под проект)
+## Optional features (configured per project)
 
-При первичной настройке **ЗАДАЙ пользователю вопросы** ниже и подключи выбранные
-варианты. К этому же скилу обращаемся, когда фичу нужно **переключить позже**.
-Текущая база собрана по значениям «по умолчанию» (выделены **жирным**).
+During initial setup **ASK the user the questions** below and wire in the chosen
+variants. Come back to this same skill when a feature needs to be **switched later**.
+The current base is assembled with the "default" values (shown in **bold**).
 
-1. **База данных?** — **sqlite** / postgres
-2. **Авторизация?** — **без авторизации** / jwt / oauth / keycloak
-3. **Throttling (ограничение частоты запросов)?** — **нет** / да
-4. **i18n (интернационализация)?** — **нет** / да
-5. **Хранение статики и медиа?** — **сервер Django** / s3
-6. **Rich text (форматированный текст)?** — **нет** / да (tinymce)
-7. **Кэш?** — **нет (locmem)** / Redis
-8. **Фоновые задачи (Celery)?** — **нет** / да
+1. **Database?** — **sqlite** / postgres
+2. **Authentication?** — **no authentication** / jwt / oauth / keycloak
+3. **Throttling (request rate limiting)?** — **no** / yes
+4. **i18n (internationalization)?** — **no** / yes
+5. **Static and media storage?** — **Django server** / s3
+6. **Rich text?** — **no** / yes (tinymce)
+7. **Cache?** — **no (locmem)** / Redis
+8. **Background tasks (Celery)?** — **no** / yes
 
-Каждая фича оформлена как отдельный split-settings файл и подключается только при
-выборе варианта, отличного от дефолта. Пошаговое подключение каждого варианта
-(зависимости, файлы настроек, env, docker-compose, тесты) — в
-[references/optional-features.md](references/optional-features.md). Готовые
-файлы-шаблоны — в `assets/` этого скила (`assets/auth/`, `assets/db/`, `assets/i18n/`,
+Each feature is laid out as a separate split-settings file and is wired in only when
+a variant other than the default is chosen. Step-by-step wiring for each variant
+(dependencies, settings files, env, docker-compose, tests) is in
+[references/optional-features.md](references/optional-features.md). Ready-made
+template files are in `assets/` of this skill (`assets/auth/`, `assets/db/`, `assets/i18n/`,
 `assets/storage/`, `assets/richtext/`, `assets/cache/`, `assets/celery/`).
 
-## Конфигурация (ключевые переменные окружения)
+## Configuration (key environment variables)
 
-Все переменные задаются в `.env` в корне репозитория (пример — `.env.example`).
-`.env` загружается через **python-dotenv** (`load_dotenv` в `app/config/environ.py`) —
-единый подход к работе с окружением во всех наших микросервисах. Типизированный
-доступ (`env.bool`/`env.int`/`env.list`) даёт небольшой хелпер `env` там же.
+All variables are set in `.env` at the repo root (example — `.env.example`).
+`.env` is loaded via **python-dotenv** (`load_dotenv` in `app/config/environ.py`) —
+a single approach to environment handling across all our microservices. Typed
+access (`env.bool`/`env.int`/`env.list`) is provided by a small `env` helper there too.
 
-| Переменная | Назначение | По умолчанию |
+| Variable | Purpose | Default |
 | --- | --- | --- |
-| `SECRET_KEY` | секретный ключ Django | — |
-| `DEBUG` | режим отладки | `0` |
-| `ALLOWED_HOSTS` | разрешённые хосты (через запятую) | localhost,127.0.0.1 |
-| `API_PREFIX` | префикс пути всех методов API (`api` -> `/api/...`; пусто -> в корне) | `api` |
-| `PORT` | порт, который слушает сервис (`make run`, gunicorn, compose) | `8000` |
-| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASS` | только для варианта postgres | — |
-| `REDIS_URL`, `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND` | только если включены кэш/Celery (см. «Опциональные фичи») | — |
+| `SECRET_KEY` | Django secret key | — |
+| `DEBUG` | debug mode | `0` |
+| `ALLOWED_HOSTS` | allowed hosts (comma-separated) | localhost,127.0.0.1 |
+| `API_PREFIX` | path prefix for all API methods (`api` -> `/api/...`; empty -> at the root) | `api` |
+| `PORT` | the port the service listens on (`make run`, gunicorn, compose) | `8000` |
+| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASS` | only for the postgres variant | — |
+| `REDIS_URL`, `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND` | only if cache/Celery are enabled (see "Optional features") | — |
 
-`API_PREFIX` важен для микросервисов: за шлюзом сервис можно смонтировать под нужным
-путём, не меняя код. Менять порт: `make run PORT=9000` (или `PORT` в окружении), в
-docker-compose порт берётся из `.env`.
+`API_PREFIX` matters for microservices: behind a gateway the service can be mounted under
+the desired path without changing code. Change the port: `make run PORT=9000` (or `PORT` in the
+environment); in docker-compose the port is taken from `.env`.
 
-## Запуск через docker-compose
+## Running via docker-compose
 
 ```bash
-docker compose up -d              # только сервис django (БД по умолчанию sqlite)
+docker compose up -d              # only the django service (DB defaults to sqlite)
 ```
 
-Сервисы `db` (postgres), `redis`, `celery_worker`, `celery_beat` добавляются при
-подключении соответствующих вариантов/фич (см.
+The `db` (postgres), `redis`, `celery_worker`, `celery_beat` services are added when
+the corresponding variants/features are wired in (see
 [references/optional-features.md](references/optional-features.md)).
 
-## Переименование/адаптация шаблона под новый сервис
+## Renaming/adapting the template for a new service
 
-1. Перенести скилы в `.claude/`, чтобы Claude Code их подхватил: `mkdir -p .claude &&
-   mv skills .claude/skills` (в шаблоне они лежат в `skills/` и до переноса не активны).
-2. Изменить заголовок API в `app/config/api.py` (`SPECTACULAR_SETTINGS["TITLE"]`).
-3. **Удалить пример-приложение `posts`** (это только демонстрация): убрать из
-   `LOCAL_APPS` (`app/config/installed_apps.py`) и из `api_urlpatterns` в `app/urls.py`,
-   удалить каталог `src/posts/`, а также пример данных `fixtures/tags.json` и тест
-   `src/app/tests/test_loaddata.py` (он завязан на `posts`).
-4. **`users` НЕ удаляем** — это кастомная модель пользователя (`AUTH_USER_MODEL =
-   "users.User"`), ядро проекта; удаление сломает auth и админку. Если список
-   пользователей не нужен в API — можно убрать только `users/api/` и `users/urls.py`
-   (плюс строку с `users` из `api_urlpatterns`), оставив модель.
-5. Ядро `app/` оставляем.
-6. Добавлять свои приложения по скилу `project-structure`.
+1. Move the skills into `.claude/` so Claude Code picks them up: `mkdir -p .claude &&
+   mv skills .claude/skills` (in the template they live in `skills/` and are inactive until moved).
+2. Change the API title in `app/config/api.py` (`SPECTACULAR_SETTINGS["TITLE"]`).
+3. **Remove the example app `posts`** (it's only a demonstration): remove it from
+   `LOCAL_APPS` (`app/config/installed_apps.py`) and from `api_urlpatterns` in `app/urls.py`,
+   delete the `src/posts/` directory, as well as the example data `fixtures/tags.json` and the test
+   `src/app/tests/test_loaddata.py` (it depends on `posts`).
+4. **Do NOT remove `users`** — it is the custom user model (`AUTH_USER_MODEL =
+   "users.User"`), the core of the project; removing it will break auth and the admin. If the user
+   list is not needed in the API, you can remove only `users/api/` and `users/urls.py`
+   (plus the `users` line from `api_urlpatterns`), keeping the model.
+5. Keep the `app/` core.
+6. Add your own apps following the `project-structure` skill.
 
-## Устранение типичных проблем
+## Troubleshooting common problems
 
-### venv не находит Python после обновления системы
-venv привязан к конкретному минорному Python (например 3.11), которого больше нет.
-Решение — пересоздать окружение:
+### venv can't find Python after a system upgrade
+The venv is tied to a specific minor Python (e.g. 3.11) that no longer exists.
+The fix is to recreate the environment:
 ```bash
 rm -rf .venv && python3.12 -m venv .venv && .venv/bin/pip install -r dev-requirements.txt
 ```
 
-### ModuleNotFoundError: No module named '<пакет>' после установки
-Чаще всего venv собран под старый Python или зависимости не доустановлены —
-пересоздай окружение и поставь зависимости заново (см. пункт выше). В чистом venv
-Python 3.12 нет `setuptools`; если какой-то пакет требует `pkg_resources`, добавь
-`setuptools` в зависимости.
+### ModuleNotFoundError: No module named '<package>' after installation
+Most often the venv was built for an old Python or the dependencies weren't fully installed —
+recreate the environment and reinstall the dependencies (see the item above). A clean venv on
+Python 3.12 has no `setuptools`; if some package requires `pkg_resources`, add
+`setuptools` to the dependencies.
 
 ### django.db.utils.OperationalError: database "<name>" does not exist
-PostgreSQL запущен и доступен, но базы из `DB_NAME` нет. Создать:
+PostgreSQL is running and reachable, but the database from `DB_NAME` doesn't exist. Create it:
 ```bash
 createdb -U <DB_USER> <DB_NAME>
-# или через psql:
+# or via psql:
 psql -U postgres -c 'CREATE DATABASE <DB_NAME>;'
 ```
-Проверить, что значения в `.env` (DB_HOST/PORT/NAME/USER/PASS) верны.
+Check that the values in `.env` (DB_HOST/PORT/NAME/USER/PASS) are correct.
 
-### Не подключается к Redis / падает Celery
-Актуально, только если подключены кэш и/или Celery. Поднять Redis
-(`docker compose up -d redis`) или указать верный `REDIS_URL` / `CELERY_BROKER_URL`
-в `.env`. В тестах Redis не нужен (бандлы задают `USE_IN_MEMORY_CACHE=True` /
-`CELERY_ALWAYS_EAGER=True` в `pytest.ini`).
+### Can't connect to Redis / Celery crashes
+Relevant only if the cache and/or Celery are enabled. Start Redis
+(`docker compose up -d redis`) or set the correct `REDIS_URL` / `CELERY_BROKER_URL`
+in `.env`. Tests don't need Redis (the bundles set `USE_IN_MEMORY_CACHE=True` /
+`CELERY_ALWAYS_EAGER=True` in `pytest.ini`).
 
-### Тесты падают на создании тестовой БД
-Пользователю БД нужно право `CREATEDB`:
+### Tests fail when creating the test DB
+The DB user needs the `CREATEDB` privilege:
 ```sql
 ALTER USER <DB_USER> CREATEDB;
 ```
 
-### Конфликт версий при pip install
-`pytest-env` требует `pytest>=7.4.3`. Версии зафиксированы в
-`requirements.txt` / `dev-requirements.txt` — меняя одну, проверяй совместимость.
+### Version conflict on pip install
+`pytest-env` requires `pytest>=7.4.3`. Versions are pinned in
+`requirements.txt` / `dev-requirements.txt` — when changing one, check compatibility.
 
-### Изменили модель — сервер/тесты ругаются на схему БД
-Создать и применить миграции: `cd src && python manage.py makemigrations && python manage.py migrate`
-(см. скил `create-model`).
+### Changed a model — the server/tests complain about the DB schema
+Create and apply migrations: `cd src && python manage.py makemigrations && python manage.py migrate`
+(see the `create-model` skill).
 
-## Связанные скилы
+## Related skills
 
-- Структура и конвенции — `project-structure`.
-- Модели — `create-model`; эндпоинты — `generate-api-method`; тесты — `backend-testing`.
+- Structure and conventions — `project-structure`.
+- Models — `create-model`; endpoints — `generate-api-method`; tests — `backend-testing`.

@@ -1,162 +1,162 @@
 ---
 name: project-structure
 description: >-
-  Карта структуры проекта-микросервиса на Django + DRF (этот шаблон): где лежат
-  настройки, базовые классы, приложения, API, тесты, и каким конвенциям следовать.
-  Используй ВСЕГДА перед внесением изменений в проект — чтобы класть код в нужное
-  место и не нарушать стиль. Ключевые слова: структура проекта, куда положить файл,
-  где настройки, новое приложение, конвенции кода, app/, api/, settings.
+  Map of the Django + DRF microservice project structure (this template): where
+  settings, base classes, apps, the API, and tests live, and which conventions to
+  follow. Use it ALWAYS before making changes to the project — to put code in the
+  right place and not break the style. Keywords: project structure, where to put a
+  file, where the settings are, new app, code conventions, app/, api/, settings.
 metadata:
   type: project-convention
-  language: ru
+  language: en
 ---
 
-# Структура проекта и конвенции
+# Project structure and conventions
 
-Микросервис на Django + DRF. Весь код Python лежит в каталоге `src/`.
-Ядро (базовые классы и настройки) — пакет `app/`. Бизнес-логика — отдельные
-Django-приложения.
+A Django + DRF microservice. All Python code lives in the `src/` directory.
+The core (base classes and settings) is the `app/` package. Business logic lives in
+separate Django apps.
 
-## Дерево каталогов
+## Directory tree
 
-Конфигурация уровня репозитория (env, pytest, докер, линтер) лежит в КОРНЕ, а
-весь Python-код — в `src/`.
+Repository-level configuration (env, pytest, docker, linter) lives at the ROOT, while
+all Python code lives in `src/`.
 
 ```
-.                            # корень репозитория
-├── .env                     # переменные окружения (НЕ коммитим; рядом .env.example)
-├── pytest.ini               # конфиг pytest (pythonpath=src, testpaths=src)
+.                            # repo root
+├── .env                     # environment variables (do NOT commit; .env.example sits alongside)
+├── pytest.ini               # pytest config (pythonpath=src, testpaths=src)
 ├── Makefile, ruff.toml, .pre-commit-config.yaml
 ├── Dockerfile, docker-compose.yml
 ├── requirements.txt, dev-requirements.txt
-├── scripts/                 # вспомогательные скрипты (entrypoint.sh и т.п.)
-├── skills/                   # скилы шаблона (при настройке переносим в .claude/)
-├── fixtures/                 # JSON-дампы тестовых данных (грузит фикстура load_data)
-├── db.sqlite3                # БД по умолчанию (в .gitignore); staticfiles/, media/ тоже тут
-└── src/                      # ТОЛЬКО python-код
+├── scripts/                 # helper scripts (entrypoint.sh, etc.)
+├── skills/                   # template skills (moved into .claude/ during setup)
+├── fixtures/                 # JSON fixture dumps of test data (loaded by the load_data fixture)
+├── db.sqlite3                # default DB (in .gitignore); staticfiles/, media/ live here too
+└── src/                      # ONLY python code
     ├── manage.py
-    ├── conftest.py              # тонкий: переэкспорт фикстур из app.tests.fixtures
-    ├── app/                     # ЯДРО: переиспользуемые классы + настройки (тоже Django-приложение)
-    │   ├── settings.py          # тонкий: SECRET_KEY, DEBUG, include(config/*)
-    │   ├── urls.py              # корневой urlconf (admin, swagger, api_urlpatterns)
-    │   ├── config/              # split-settings: api, auth, db, http, i18n, ... (cache/celery - опц.)
-    │   ├── api/                 # переиспользуемые элементы API (наследуемся в приложениях)
-    │   │   ├── viewsets.py      #   DefaultModelViewSet, ReadonlyModelViewSet, миксины
+    ├── conftest.py              # thin: re-exports fixtures from app.tests.fixtures
+    ├── app/                     # CORE: reusable classes + settings (also a Django app)
+    │   ├── settings.py          # thin: SECRET_KEY, DEBUG, include(config/*)
+    │   ├── urls.py              # root urlconf (admin, swagger, api_urlpatterns)
+    │   ├── config/              # split-settings: api, auth, db, http, i18n, ... (cache/celery - optional)
+    │   ├── api/                 # reusable API elements (inherited from in apps)
+    │   │   ├── viewsets.py      #   DefaultModelViewSet, ReadonlyModelViewSet, mixins
     │   │   ├── serializers.py   #   ReadOnlyModelSerializer
     │   │   ├── filtersets.py    #   SearchFilterSet
-    │   │   ├── routers.py       #   DefaultRouter (DELETE на список -> bulk_delete)
+    │   │   ├── routers.py       #   DefaultRouter (DELETE on a list -> bulk_delete)
     │   │   ├── pagination.py    #   StandardResultsSetPagination (page/page_size)
     │   │   └── permissions.py   #   IsAuthenticated, ReadOnly
-    │   ├── models.py            # ТОЛЬКО миксины/базовые классы (DefaultModel, UUIDModel, ...); моделей нет
-    │   ├── tests/               # общие тест-объекты: api.py (ApiClient), fixtures.py, loaddata.py
+    │   ├── models.py            # ONLY mixins/base classes (DefaultModel, UUIDModel, ...); no models
+    │   ├── tests/               # shared test objects: api.py (ApiClient), fixtures.py, loaddata.py
     │   ├── wsgi.py / asgi.py
     │   └── apps.py
-    └── <приложение>/            # posts - пример (удаляем); users - кастомный User (ядро)
-        ├── models.py            # модели + QuerySet/Manager (паттерн репозитория)
-        ├── constants.py         # константы приложения
+    └── <app>/                  # posts - example (delete it); users - custom User (core)
+        ├── models.py            # models + QuerySet/Manager (repository pattern)
+        ├── constants.py         # app constants
         ├── admin.py
         ├── apps.py
         ├── urls.py              # DefaultRouter + path()
-        ├── api/                 # слой представления (HTTP); БЕЗ бизнес-логики
-        │   ├── viewsets.py      #   вьюхи/вьюсеты: обработка запроса, валидация, ответ
-        │   ├── serializers.py   #   сериализаторы
-        │   ├── filtersets.py    #   настройки django-filter
-        │   └── schema.py        #   extend_schema-дескрипторы для swagger
-        ├── services/            # бизнес-логика: class-based сервисы (вызываются из вьюх/admin/CLI/задач)
-        ├── tasks/               # Celery-задачи (если фича включена)
-        ├── tests/               # тесты + фикстуры/фабрики
-        │   ├── conftest.py      #   фикстуры/фабрики приложения (опц., только если они есть)
-        │   ├── api/             #   тесты эндпоинтов
-        │   └── services/        #   тесты бизнес-логики
+        ├── api/                 # presentation layer (HTTP); NO business logic
+        │   ├── viewsets.py      #   views/viewsets: request handling, validation, response
+        │   ├── serializers.py   #   serializers
+        │   ├── filtersets.py    #   django-filter settings
+        │   └── schema.py        #   extend_schema descriptors for swagger
+        ├── services/            # business logic: class-based services (called from views/admin/CLI/tasks)
+        ├── tasks/               # Celery tasks (if the feature is enabled)
+        ├── tests/               # tests + fixtures/factories
+        │   ├── conftest.py      #   app fixtures/factories (optional, only if there are any)
+        │   ├── api/             #   endpoint tests
+        │   └── services/        #   business-logic tests
         └── migrations/
 ```
 
-## Слои приложения
+## App layers
 
-Чёткое разделение ответственности:
+A clear separation of responsibilities:
 
-- **`models.py`** — данные. Переиспользуемые выборки выносим в кастомные
-  `QuerySet`/`Manager` (паттерн репозитория): `Post.objects.published()`.
-- **`services/`** — бизнес-логика. Отдельный слой; вызывается из вьюх, экшенов
-  админки, CLI-команд, Celery-задач. Оформляем как **class-based сервисы** (даже с
-  одним методом) — см. скил `generate-api-method`.
-- **`api/` (viewsets)** — слой HTTP. Только приём запроса, валидация (через
-  сериализаторы), вызов сервиса и формирование ответа. **Никакой бизнес-логики.**
-- **`constants.py`** — константы приложения (импортируем там, где нужны).
+- **`models.py`** — data. Move reusable querysets into custom
+  `QuerySet`/`Manager` classes (repository pattern): `Post.objects.published()`.
+- **`services/`** — business logic. A separate layer; called from views, admin
+  actions, CLI commands, Celery tasks. Write them as **class-based services** (even with
+  a single method) — see the `generate-api-method` skill.
+- **`api/` (viewsets)** — the HTTP layer. Only request handling, validation (via
+  serializers), calling a service, and building the response. **No business logic.**
+- **`constants.py`** — app constants (import them wherever needed).
 
-Пример: вьюсет `posts` в `@action similar` лишь вызывает `SimilarPostsService(post)()`
-и отдаёт ответ; сам запрос к БД живёт в сервисе, а `published()` — в `PostQuerySet`.
+Example: the `posts` viewset in the `@action similar` only calls `SimilarPostsService(post)()`
+and returns the response; the DB query itself lives in the service, and `published()` — in `PostQuerySet`.
 
-## Куда что класть
+## Where to put what
 
-| Что добавляем | Куда |
+| What we add | Where |
 | --- | --- |
-| Модель | `<app>/models.py` (см. скил create-model) |
-| Бизнес-логика | `<app>/services/` (вызывается из вьюх/admin/CLI/задач) |
-| Константа приложения | `<app>/constants.py` |
-| Эндпоинт / ViewSet / @action | `<app>/api/viewsets.py` (тонкие; логику зовём из `services/`) (см. generate-api-method) |
-| Сериализатор | `<app>/api/serializers.py` |
-| Фильтр / поиск | `<app>/api/filtersets.py` (наследуем `SearchFilterSet`) |
-| Описание для swagger | `<app>/api/schema.py` |
-| Маршруты приложения | `<app>/urls.py`, затем добавить в список `api_urlpatterns` в `app/urls.py` |
-| Тест | `<app>/tests/api/` или `<app>/tests/services/` (см. backend-testing) |
-| Фикстура/фабрика приложения (если есть) | `<app>/tests/conftest.py` (создаём только при наличии своих фикстур) |
-| Общая (на все приложения) фикстура | `app/tests/fixtures.py` (переэкспорт в `src/conftest.py`) |
-| Настройка Django | соответствующий модуль в `app/config/` (НЕ в `settings.py`) |
-| Celery-задача (если фича включена) | `<app>/tasks/` (пакет; автодискавер; см. `initial-setup`) |
-| Базовый класс, общий для всех приложений | `app/...` |
+| Model | `<app>/models.py` (see the create-model skill) |
+| Business logic | `<app>/services/` (called from views/admin/CLI/tasks) |
+| App constant | `<app>/constants.py` |
+| Endpoint / ViewSet / @action | `<app>/api/viewsets.py` (thin; call logic from `services/`) (see generate-api-method) |
+| Serializer | `<app>/api/serializers.py` |
+| Filter / search | `<app>/api/filtersets.py` (inherit `SearchFilterSet`) |
+| Swagger description | `<app>/api/schema.py` |
+| App routes | `<app>/urls.py`, then add to the `api_urlpatterns` list in `app/urls.py` |
+| Test | `<app>/tests/api/` or `<app>/tests/services/` (see backend-testing) |
+| App fixture/factory (if any) | `<app>/tests/conftest.py` (create only if you have your own fixtures) |
+| Shared (across all apps) fixture | `app/tests/fixtures.py` (re-exported in `src/conftest.py`) |
+| Django setting | the relevant module in `app/config/` (NOT in `settings.py`) |
+| Celery task (if the feature is enabled) | `<app>/tasks/` (a package; autodiscovered; see `initial-setup`) |
+| Base class shared across all apps | `app/...` |
 
-## Пакет `app/` (ядро) — правила
+## The `app/` package (core) — rules
 
-`app/` — основное приложение с настройками сервиса и переиспользуемыми элементами.
+`app/` is the main application with the service's settings and reusable elements.
 
-- **`api/`** — то, что переиспользуется в других приложениях (наследуемся): пагинация,
-  базовые сериализаторы/вьюхи/вьюсеты/роутер/permissions. Конкретных эндпоинтов здесь нет.
-- **`config/`** — подключаемые модули настроек (split-settings); включаются в
-  `include(...)` в `app/settings.py`. Меняем настройку в нужном модуле, не в `settings.py`.
-- **`tests/`** — общие тест-объекты: `api.py` (`ApiClient`), `fixtures.py` (общие
-  фикстуры + `__all__`), `loaddata.py` (фикстура `load_data` грузит JSON-дампы из
-  `fixtures/`). Сами дампы тестовых данных — в `fixtures/*.json`.
-- **`urls.py`** — один файл: корневой urlconf (admin, swagger/redoc/schema) и список
-  `api_urlpatterns` с маршрутами приложений. Отдельного пакета `urls/` нет.
-- **`models.py`** — ТОЛЬКО миксины и базовые классы для наследования
+- **`api/`** — what is reused in other apps (inherited from): pagination,
+  base serializers/views/viewsets/router/permissions. No concrete endpoints here.
+- **`config/`** — pluggable settings modules (split-settings); included via
+  `include(...)` in `app/settings.py`. Change a setting in the relevant module, not in `settings.py`.
+- **`tests/`** — shared test objects: `api.py` (`ApiClient`), `fixtures.py` (shared
+  fixtures + `__all__`), `loaddata.py` (the `load_data` fixture loads JSON dumps from
+  `fixtures/`). The test data dumps themselves — in `fixtures/*.json`.
+- **`urls.py`** — a single file: the root urlconf (admin, swagger/redoc/schema) and the
+  `api_urlpatterns` list with the apps' routes. There is no separate `urls/` package.
+- **`models.py`** — ONLY mixins and base classes for inheritance
   (`DefaultModel`, `UUIDModel`, `TimeStampedMixin`, `IsActiveMixin`, `MoneyField`).
-  Конкретные модели в `app/` не создаются.
+  No concrete models are created in `app/`.
 
-## Базовые классы (всегда наследуемся от них)
+## Base classes (always inherit from them)
 
-- Модели: `app.models.DefaultModel` / `UUIDModel` (+ миксины `TimeStampedMixin`, `IsActiveMixin`).
-- ViewSet: `app.api.viewsets.DefaultModelViewSet` (CRUD) / `ReadonlyModelViewSet` (чтение).
+- Models: `app.models.DefaultModel` / `UUIDModel` (+ mixins `TimeStampedMixin`, `IsActiveMixin`).
+- ViewSet: `app.api.viewsets.DefaultModelViewSet` (CRUD) / `ReadonlyModelViewSet` (read-only).
 - FilterSet: `app.api.filtersets.SearchFilterSet`.
 - Router: `app.api.routers.DefaultRouter`.
-- В тестах: `app.tests.ApiClient`; загрузка дампов — фикстура `load_data` (см. backend-testing).
+- In tests: `app.tests.ApiClient`; loading dumps — the `load_data` fixture (see backend-testing).
 
-## Новое приложение
+## New app
 
-1. `cd src && python manage.py startapp <name>`, затем привести к структуре выше:
-   создать `api/` (`viewsets.py`/`serializers.py`/`filtersets.py`/`schema.py`), `tests/`
-   и, по мере необходимости, `services/`, `constants.py`, `tasks/`.
-2. Добавить `"<name>"` в `LOCAL_APPS` в `app/config/installed_apps.py`.
-3. Подключить `path("<name>/", include("<name>.urls"))` в `app/urls.py`.
+1. `cd src && python manage.py startapp <name>`, then bring it to the structure above:
+   create `api/` (`viewsets.py`/`serializers.py`/`filtersets.py`/`schema.py`), `tests/`
+   and, as needed, `services/`, `constants.py`, `tasks/`.
+2. Add `"<name>"` to `LOCAL_APPS` in `app/config/installed_apps.py`.
+3. Wire up `path("<name>/", include("<name>.urls"))` in `app/urls.py`.
 
-## Конвенции кода (из эталонного проекта)
+## Code conventions (from the reference project)
 
-Подробный свод правил — в [references/conventions.md](references/conventions.md). Кратко:
+The detailed rule set is in [references/conventions.md](references/conventions.md). In brief:
 
-- Форматирование: ruff (аналог black), длина строки **120**, кавычки **двойные**.
-- Импорты: isort, 3 блока (stdlib / сторонние / локальные); точечный импорт сущностей,
-  модули stdlib — целиком; `import *` запрещён.
-- Многострочные перечисления — с запятой после последнего элемента.
-- В `__init__.py` — только импорты.
-- `verbose_name` и текст для пользователя — на русском через `gettext_lazy as _`.
-- Логи — на английском.
-- Докстринг в одну строку заканчивается точкой.
-- Фильтры и выборки выносим в кастомные QuerySet/Manager (паттерн «репозиторий»).
-- Удаляем мёртвый/закомментированный код; TODO/FIXME не оставляем в коммите.
+- Formatting: ruff (a black equivalent), line length **120**, **double** quotes.
+- Imports: isort, 3 blocks (stdlib / third-party / local); import entities by name,
+  stdlib modules — as whole modules; `import *` is forbidden.
+- Multiline listings — with a trailing comma after the last element.
+- In `__init__.py` — imports only.
+- `verbose_name` and user-facing text — in Russian via `gettext_lazy as _`.
+- Logs — in English.
+- A single-line docstring ends with a period.
+- Move filters and querysets into custom QuerySet/Manager classes (the "repository" pattern).
+- Remove dead/commented-out code; do not leave TODO/FIXME in a commit.
 
-## Связанные скилы
+## Related skills
 
-- Модели — `create-model`.
-- Эндпоинты — `generate-api-method`.
-- Тесты — `backend-testing`.
-- Настройка/запуск/проблемы — `initial-setup`.
+- Models — `create-model`.
+- Endpoints — `generate-api-method`.
+- Tests — `backend-testing`.
+- Setup/run/troubleshooting — `initial-setup`.

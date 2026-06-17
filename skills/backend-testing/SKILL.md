@@ -1,82 +1,82 @@
 ---
 name: backend-testing
 description: >-
-  Написание и отладка тестов микросервиса на Django + DRF (pytest +
-  django_dynamic_fixture + ApiClient). Что тестируем (все API-методы:
-  запрос/ответ/валидация; сервисы; queryset/manager; задачи), структура тестов по
-  приложениям, фикстуры, тестовые данные (G() для простых кейсов, дампы fixtures/ +
-  load_data для сложных), целевое покрытие (≥70%, pytest-cov, make cov). Используй при
-  создании тестов API/сервисов/моделей или разборе падающих тестов. Ключевые слова:
-  тест, pytest, фикстура, G(), ApiClient, as_user, сервис, queryset, coverage,
-  покрытие, дамп, django_db, упал тест.
+  Writing and debugging tests for a Django + DRF microservice (pytest +
+  django_dynamic_fixture + ApiClient). What to test (all API methods:
+  request/response/validation; services; queryset/manager; tasks), test structure by
+  app, fixtures, test data (G() for simple cases, fixtures/ dumps +
+  load_data for complex ones), target coverage (≥70%, pytest-cov, make cov). Use when
+  creating API/service/model tests or investigating failing tests. Keywords:
+  test, pytest, fixture, G(), ApiClient, as_user, service, queryset, coverage,
+  fixture dump, django_db, failing test.
 metadata:
   type: project-convention
-  language: ru
+  language: en
 ---
 
-# Тестирование бэкенда
+# Backend testing
 
-Стек: `pytest` + `pytest-django` + `django_dynamic_fixture` (фабрика `G`) + `ApiClient`.
-Источник правды — `pytest.ini`, `src/conftest.py`, `src/app/tests/`. Структура проекта —
-скил `project-structure`.
+Stack: `pytest` + `pytest-django` + `django_dynamic_fixture` (the `G` factory) + `ApiClient`.
+Source of truth — `pytest.ini`, `src/conftest.py`, `src/app/tests/`. Project structure —
+the `project-structure` skill.
 
-## Что тестируем (минимум)
+## What to test (minimum)
 
-- **Все API-методы** — статус ответа, тело ответа и валидацию: happy path **плюс**
-  негативный сценарий (400/401/403/404 и т.п.).
-- **Сервисы** (`<app>/services/`) — и сложную, и простую логику.
-- **Кастомные QuerySet/Manager** (паттерн репозитория, напр. `published()`).
-- **Celery-задачи** — если фича включена (см. раздел в `initial-setup`).
-- Покрытие — **не ниже 70%** (см. ниже).
+- **All API methods** — response status, response body and validation: happy path **plus**
+  a negative case (400/401/403/404 etc.).
+- **Services** (`<app>/services/`) — both complex and simple logic.
+- **Custom QuerySet/Manager** (repository pattern, e.g. `published()`).
+- **Celery tasks** — if the feature is enabled (see the section in `initial-setup`).
+- Coverage — **no lower than 70%** (see below).
 
-## Где лежат тесты
+## Where tests live
 
-- `<app>/tests/api/` — тесты эндпоинтов.
-- `<app>/tests/services/` — тесты сервисов.
-- `<app>/tests/test_models.py` — модели и кастомные QuerySet/Manager.
-- Имена файлов: `test*.py`. Каждый каталог тестов — с пустым `__init__.py`.
-- **Общие** фикстуры (на все приложения) — в `app/tests/fixtures.py` (переэкспорт в
-  `src/conftest.py`). **Фикстуры приложения** — в `<app>/tests/conftest.py` (создаём
-  только если они есть; в каждом приложении не нужен).
+- `<app>/tests/api/` — endpoint tests.
+- `<app>/tests/services/` — service tests.
+- `<app>/tests/test_models.py` — models and custom QuerySet/Manager.
+- File names: `test*.py`. Each test directory has an empty `__init__.py`.
+- **Shared** fixtures (for all apps) — in `app/tests/fixtures.py` (re-exported in
+  `src/conftest.py`). **App fixtures** — in `<app>/tests/conftest.py` (created
+  only if they exist; not required in every app).
 
-## Фикстуры (из `app/tests/fixtures.py`)
+## Fixtures (from `app/tests/fixtures.py`)
 
-| Фикстура | Что даёт |
+| Fixture | What it provides |
 | --- | --- |
-| `user` / `admin_user` | пользователь / суперпользователь |
-| `as_user` / `as_admin` | `ApiClient`, аутентифицированный соответствующим пользователем |
-| `api_client` | анонимный `ApiClient` |
-| `load_data` | грузит JSON-дампы из `fixtures/*.json` в тестовую БД |
+| `user` / `admin_user` | a user / a superuser |
+| `as_user` / `as_admin` | an `ApiClient` authenticated as the corresponding user |
+| `api_client` | an anonymous `ApiClient` |
+| `load_data` | loads JSON dumps from `fixtures/*.json` into the test DB |
 
-## Тестовые данные: `G()` vs дампы
+## Test data: `G()` vs dumps
 
-- **`G()` (django_dynamic_fixture)** — для **простых CRUD-подобных** кейсов: автозаполняет
-  обязательные поля и связи прямо в тесте.
+- **`G()` (django_dynamic_fixture)** — for **simple CRUD-like** cases: auto-fills
+  required fields and relations right in the test.
   ```python
-  post = G(Post, is_draft=False)     # один объект
-  posts = G(Post, n=3)               # список
-  post = G(Post, tags=[G(Tag)])      # M2M через список
+  post = G(Post, is_draft=False)     # a single object
+  posts = G(Post, n=3)               # a list
+  post = G(Post, tags=[G(Tag)])      # M2M via a list
   ```
-- **Дампы (`fixtures/*.json` + фикстура `load_data`)** — для **новых и сложных кейсов с
-  данными**: справочники, связанные графы объектов, граничные значения. Добавляем дамп,
-  подключаем `load_data` в тест:
+- **Dumps (`fixtures/*.json` + the `load_data` fixture)** — for **new and complex
+  data-heavy cases**: lookup tables, related object graphs, boundary values. Add a dump,
+  wire `load_data` into the test:
   ```python
   @pytest.mark.django_db
   def test_smth(load_data, as_user):
-      ...  # данные из fixtures/ уже в БД
+      ...  # data from fixtures/ is already in the DB
   ```
-  Файлы грузятся по алфавиту; порядок по FK — префиксом имени (`01_users.json`).
-  Создать дамп: `make dumpdata app=<app> model=<Model>`. **Принцип:** каждая строка
-  дампа оправдана конкретным тестом; не зеркалим прод-базу.
+  Files load alphabetically; FK ordering is controlled by a name prefix (`01_users.json`).
+  Create a dump: `make dumpdata app=<app> model=<Model>`. **Principle:** every line in
+  the dump is justified by a concrete test; do not mirror the prod database.
 
 ## ApiClient
 
-`app.tests.ApiClient` (обёртка над DRF APIClient): сам проверяет статус и возвращает
-распарсенный JSON. Ожидаемый статус по умолчанию: get=200, post=201, patch/put=200,
-delete=204; переопределяется через `expected_status`. `as_response=True` — «сырой»
-Response. Тело и ответ — обычный JSON DRF (поля в `snake_case`).
+`app.tests.ApiClient` (a wrapper over DRF APIClient): it checks the status itself and returns
+the parsed JSON. Default expected status: get=200, post=201, patch/put=200,
+delete=204; overridden via `expected_status`. `as_response=True` — the raw
+Response. Body and response are plain DRF JSON (fields in `snake_case`).
 
-## Тесты API (`tests/api/`)
+## API tests (`tests/api/`)
 
 ```python
 import pytest
@@ -101,20 +101,20 @@ class TestPostViewSet:
         result = as_user.post("/api/posts/", data)
 
         assert Post.objects.count() == 1
-        assert result["slug"]  # заполнен автоматически (calculate_slug)
+        assert result["slug"]  # filled in automatically (calculate_slug)
 
     def test_create_validation_error(self, as_user):
-        # негативный сценарий: нет обязательных полей -> 400
+        # negative case: required fields missing -> 400
         as_user.post("/api/posts/", {}, expected_status=400)
 ```
 
-Проверяем и статус, и тело; для каждого публичного метода — минимум happy path +
-негатив.
+Check both the status and the body; for every public method — at minimum a happy path +
+a negative case.
 
-## Тесты сервисов (`tests/services/`)
+## Service tests (`tests/services/`)
 
-Сервис — class-based (см. `generate-api-method`). Обычно тестируем «через данные»:
-готовим данные (`G()` или `load_data`), вызываем сервис, проверяем результат.
+A service is class-based (see `generate-api-method`). Usually we test "through data":
+prepare data (`G()` or `load_data`), call the service, check the result.
 
 ```python
 import pytest
@@ -130,7 +130,7 @@ class TestSimilarPostsService:
         tag = G(Tag)
         post = G(Post, is_draft=False, tags=[tag])
         similar = G(Post, is_draft=False, tags=[tag])
-        G(Post, is_draft=False)  # без общих тегов -> не попадает
+        G(Post, is_draft=False)  # no shared tags -> excluded
 
         result = SimilarPostsService(post)()
 
@@ -144,11 +144,11 @@ class TestSimilarPostsService:
         assert list(SimilarPostsService(post)()) == []
 ```
 
-Если сервис оркестрирует **внешние вызовы** (другой сервис, HTTP-клиент, Celery-задачу) —
-эти зависимости мокаем (`unittest.mock`), проверяя, что они вызваны с нужными
-аргументами, а не дёргаем их по-настоящему.
+If a service orchestrates **external calls** (another service, an HTTP client, a Celery task) —
+mock those dependencies (`unittest.mock`), asserting that they were called with the right
+arguments instead of invoking them for real.
 
-## Тесты QuerySet/Manager (`tests/test_models.py`)
+## QuerySet/Manager tests (`tests/test_models.py`)
 
 ```python
 @pytest.mark.django_db
@@ -160,34 +160,34 @@ class TestPostQuerySet:
         assert Post.objects.published().count() == 1
 ```
 
-## Запуск и покрытие
+## Running and coverage
 
-Запускаем из КОРНЯ репозитория (`pytest.ini`: `pythonpath=src`, `testpaths=src`):
+Run from the ROOT of the repository (`pytest.ini`: `pythonpath=src`, `testpaths=src`):
 
 ```bash
-make test                                   # быстрый прогон
-make cov                                    # с покрытием: term-missing + htmlcov/ + порог 70%
-pytest src/posts/tests/services/test_post.py::TestSimilarPostsService  # один класс
-pytest -k similar                           # по подстроке имени
+make test                                   # quick run
+make cov                                    # with coverage: term-missing + htmlcov/ + 70% threshold
+pytest src/posts/tests/services/test_post.py::TestSimilarPostsService  # a single class
+pytest -k similar                           # by name substring
 ```
 
-**Покрытие.** Цель — **≥70%** (строки), задано в `.coveragerc` (`fail_under = 70`).
-`make cov` (использует `pytest-cov`) печатает непокрытые строки и пишет HTML-отчёт в
-`htmlcov/index.html`; при покрытии ниже 70% команда падает. Для нового кода — тот же
-порог; выше — приветствуется. По умолчанию БД в тестах — sqlite (in-memory), внешняя
-БД не нужна.
+**Coverage.** Target — **≥70%** (lines), set in `.coveragerc` (`fail_under = 70`).
+`make cov` (uses `pytest-cov`) prints uncovered lines and writes an HTML report to
+`htmlcov/index.html`; if coverage is below 70% the command fails. For new code — the same
+threshold; higher is welcome. By default the test DB is sqlite (in-memory), no external
+DB is needed.
 
-## Типичные причины падений
+## Common causes of failures
 
-- **400 на запись** — неверные имена полей (`snake_case`, как в модели) или не переданы
-  обязательные поля.
-- **401 при включённой авторизации** — взят `api_client` (аноним) вместо `as_user`
-  (в базе без авторизации оба дают одинаковый доступ).
-- **Объект не создаётся через `G()`** — обязательное поле без подходящего значения;
-  задайте явно `G(Model, field=...)`.
-- **Неожиданный slug/значение** — поле заполняется хуком `calculate_*` на save();
-  проверяйте итог после сохранения.
-- **`coverage` ниже 70%** — добавьте тесты на непокрытые ветки (см. `make cov`
-  term-missing) либо обоснуйте в PR.
-- **Тест падает только вместе с другими** — тесты не изолированы; не полагайтесь на
-  порядок, готовьте данные в самом тесте/фикстуре.
+- **400 on write** — wrong field names (`snake_case`, as in the model) or required
+  fields not passed.
+- **401 with authorization enabled** — `api_client` (anonymous) was used instead of `as_user`
+  (in the base without authorization both give the same access).
+- **Object is not created via `G()`** — a required field has no suitable value;
+  set it explicitly with `G(Model, field=...)`.
+- **Unexpected slug/value** — the field is filled by a `calculate_*` hook on save();
+  check the result after saving.
+- **`coverage` below 70%** — add tests for the uncovered branches (see `make cov`
+  term-missing) or justify it in the PR.
+- **A test fails only together with others** — tests are not isolated; do not rely on
+  ordering, prepare data in the test/fixture itself.
